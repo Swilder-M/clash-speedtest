@@ -657,18 +657,20 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 		// Parse the HTML response to extract token, IP, and timestamp
 		bodyStr := string(body)
 		
-		// Extract token using regex
-		tokenRegex := regexp.MustCompile(`token:\s*'([^']+)'`)
+		// Extract token using regex - match both quoted and unquoted values
+		tokenRegex := regexp.MustCompile(`token:\s*['"]([^'"]+)['"]`)
 		tokenMatch := tokenRegex.FindStringSubmatch(bodyStr)
 		if len(tokenMatch) < 2 {
+			log.Debugln("Failed to extract token from response")
 			continue
 		}
 		token := tokenMatch[1]
 		
-		// Extract IP using regex
-		ipRegex := regexp.MustCompile(`ip:\s*'([^']+)'`)
+		// Extract IP using regex - match both quoted and unquoted values
+		ipRegex := regexp.MustCompile(`ip:\s*['"]([^'"]+)['"]`)
 		ipMatch := ipRegex.FindStringSubmatch(bodyStr)
 		if len(ipMatch) < 2 {
+			log.Debugln("Failed to extract IP from response")
 			continue
 		}
 		ip := ipMatch[1]
@@ -677,9 +679,12 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 		timestampRegex := regexp.MustCompile(`t:\s*(\d+)`)
 		timestampMatch := timestampRegex.FindStringSubmatch(bodyStr)
 		if len(timestampMatch) < 2 {
+			log.Debugln("Failed to extract timestamp from response")
 			continue
 		}
 		timestamp := timestampMatch[1]
+		
+		log.Debugln("Extracted - IP:", ip, "Token:", token, "Timestamp:", timestamp)
 		
 		// Step 2: Query IP info using the extracted data
 		data := url.Values{}
@@ -703,10 +708,15 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			continue
 		}
 
+		log.Debugln("IP2Location API response:", string(body2))
+		
 		var ip2LocationResp IP2LocationResponse
 		if err := json.Unmarshal(body2, &ip2LocationResp); err != nil {
+			log.Debugln("Failed to unmarshal IP2Location response:", err)
 			continue
 		}
+
+		log.Debugln("Parsed IP2Location response:", ip2LocationResp)
 
 		ipInfo := &IPInfo{
 			IP:          ip,
