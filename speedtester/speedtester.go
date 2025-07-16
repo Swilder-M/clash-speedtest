@@ -2,6 +2,7 @@ package speedtester
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -302,11 +303,29 @@ type testJob struct {
 	proxy *CProxy
 }
 
+type IPInfo struct {
+	IP          string `json:"ip"`
+	CountryCode string `json:"country_code"`
+	UsageType   string `json:"usage_type"`
+	ISP         string `json:"isp"`
+}
+
+type IPAPIResponse struct {
+	Data struct {
+		IP          string `json:"ip"`
+		CountryCode string `json:"country_code"`
+		UsageType   string `json:"usage_type"`
+		ISP         string `json:"isp"`
+	} `json:"data"`
+	Success bool `json:"success"`
+}
+
 type Result struct {
 	ProxyName     string         `json:"proxy_name"`
 	ProxyType     string         `json:"proxy_type"`
 	ProxyConfig   map[string]any `json:"proxy_config"`
 	IP            string         `json:"ip"`
+	IPInfo        *IPInfo        `json:"ip_info"`
 	Latency       time.Duration  `json:"latency"`
 	Jitter        time.Duration  `json:"jitter"`
 	PacketLoss    float64        `json:"packet_loss"`
@@ -376,8 +395,8 @@ func (st *SpeedTester) testProxy(name string, proxy *CProxy) *Result {
 		return result
 	}
 
-	// 获取落地IP
-	result.IP = st.getProxyIP(proxy)
+	// 获取落地IP和IP信息
+	result.IP, result.IPInfo = st.getProxyIPInfo(proxy)
 
 	// 2. 并发进行下载和上传测试
 
@@ -600,30 +619,48 @@ func convertMappedIPv6ToIPv4(server string) string {
 	return server
 }
 
-func (st *SpeedTester) getProxyIP(proxy constant.Proxy) string {
+func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 	client := st.createClient(proxy, 10*time.Second)
 	
-	resp, err := client.Get("https://cloudflare.com/cdn-cgi/trace")
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return ""
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return ""
-	}
-
-	lines := strings.Split(string(body), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "ip=") {
-			return strings.TrimPrefix(line, "ip=")
+	for attempt := 0; attempt < 3; attempt++ {
+		if attempt > 0 {
+			time.Sleep(500 * time.Millisecond)
 		}
-	}
+		
+		resp, err := client.Get("https://ip.codm.ing/")
+		if err != nil {
+			continue
+		}
+		
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			continue
+		}
 
-	return ""
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+
+		var apiResp IPAPIResponse
+		if err := json.Unmarshal(body, &apiResp); err != nil {
+			continue
+		}
+
+		if !apiResp.Success {
+			continue
+		}
+
+		ipInfo := &IPInfo{
+			IP:          apiResp.Data.IP,
+			CountryCode: apiResp.Data.CountryCode,
+			UsageType:   apiResp.Data.UsageType,
+			ISP:         apiResp.Data.ISP,
+		}
+
+		return apiResp.Data.IP, ipInfo
+	}
+	
+	return "", nil
 }

@@ -219,6 +219,16 @@ func printResults(results []*speedtester.Result) {
 			if ipStr == "" {
 				ipStr = "N/A"
 			}
+
+			// 添加IP信息到日志
+			if result.IPInfo != nil {
+				fmt.Printf("IP: %s | Country: %s | Usage: %s | ISP: %s\n",
+					result.IPInfo.IP,
+					result.IPInfo.CountryCode,
+					result.IPInfo.UsageType,
+					result.IPInfo.ISP)
+			}
+
 			row = []string{
 				idStr,
 				result.ProxyName,
