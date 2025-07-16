@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -320,6 +321,15 @@ type IPAPIResponse struct {
 	Success bool `json:"success"`
 }
 
+type IP2LocationResponse struct {
+	CountryCode string `json:"countryCode"`
+	CountryName string `json:"countryName"`
+	RegionName  string `json:"regionName"`
+	CityName    string `json:"cityName"`
+	ISP         string `json:"isp"`
+	UsageType   string `json:"usageType"`
+}
+
 type Result struct {
 	ProxyName     string         `json:"proxy_name"`
 	ProxyType     string         `json:"proxy_type"`
@@ -627,7 +637,8 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			time.Sleep(500 * time.Millisecond)
 		}
 		
-		resp, err := client.Get("https://ip.codm.ing/")
+		// Step 1: Get token, IP, and timestamp from ip2location.com
+		resp, err := client.Get("https://www.ip2location.com/")
 		if err != nil {
 			continue
 		}
@@ -643,23 +654,68 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			continue
 		}
 
-		var apiResp IPAPIResponse
-		if err := json.Unmarshal(body, &apiResp); err != nil {
+		// Parse the HTML response to extract token, IP, and timestamp
+		bodyStr := string(body)
+		
+		// Extract token using regex
+		tokenRegex := regexp.MustCompile(`token:\s*'([^']+)'`)
+		tokenMatch := tokenRegex.FindStringSubmatch(bodyStr)
+		if len(tokenMatch) < 2 {
+			continue
+		}
+		token := tokenMatch[1]
+		
+		// Extract IP using regex
+		ipRegex := regexp.MustCompile(`ip:\s*'([^']+)'`)
+		ipMatch := ipRegex.FindStringSubmatch(bodyStr)
+		if len(ipMatch) < 2 {
+			continue
+		}
+		ip := ipMatch[1]
+		
+		// Extract timestamp using regex
+		timestampRegex := regexp.MustCompile(`t:\s*(\d+)`)
+		timestampMatch := timestampRegex.FindStringSubmatch(bodyStr)
+		if len(timestampMatch) < 2 {
+			continue
+		}
+		timestamp := timestampMatch[1]
+		
+		// Step 2: Query IP info using the extracted data
+		data := url.Values{}
+		data.Set("ip", ip)
+		data.Set("t", timestamp)
+		data.Set("token", token)
+		
+		resp2, err := client.PostForm("https://api.ip2location.io/query/", data)
+		if err != nil {
+			continue
+		}
+		
+		if resp2.StatusCode != http.StatusOK {
+			resp2.Body.Close()
 			continue
 		}
 
-		if !apiResp.Success {
+		body2, err := io.ReadAll(resp2.Body)
+		resp2.Body.Close()
+		if err != nil {
+			continue
+		}
+
+		var ip2LocationResp IP2LocationResponse
+		if err := json.Unmarshal(body2, &ip2LocationResp); err != nil {
 			continue
 		}
 
 		ipInfo := &IPInfo{
-			IP:          apiResp.Data.IP,
-			CountryCode: apiResp.Data.CountryCode,
-			UsageType:   apiResp.Data.UsageType,
-			ISP:         apiResp.Data.ISP,
+			IP:          ip,
+			CountryCode: ip2LocationResp.CountryCode,
+			UsageType:   ip2LocationResp.UsageType,
+			ISP:         ip2LocationResp.ISP,
 		}
 
-		return apiResp.Data.IP, ipInfo
+		return ip, ipInfo
 	}
 	
 	return "", nil
