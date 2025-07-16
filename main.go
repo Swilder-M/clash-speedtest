@@ -111,6 +111,9 @@ func printResults(results []*speedtester.Result) {
 			"节点名称",
 			"类型",
 			"落地IP",
+			"国家",
+			"用途",
+			"ISP",
 			"延迟",
 			"抖动",
 			"丢包率",
@@ -137,11 +140,14 @@ func printResults(results []*speedtester.Result) {
 	table.SetColMinWidth(3, 8)  // 延迟
 	if !*fastMode {
 		table.SetColMinWidth(3, 15) // 落地IP
-		table.SetColMinWidth(4, 8)  // 延迟
-		table.SetColMinWidth(5, 8)  // 抖动
-		table.SetColMinWidth(6, 8)  // 丢包率
-		table.SetColMinWidth(7, 12) // 下载速度
-		table.SetColMinWidth(8, 12) // 上传速度
+		table.SetColMinWidth(4, 6)  // 国家
+		table.SetColMinWidth(5, 8)  // 用途
+		table.SetColMinWidth(6, 15) // ISP
+		table.SetColMinWidth(7, 8)  // 延迟
+		table.SetColMinWidth(8, 8)  // 抖动
+		table.SetColMinWidth(9, 8)  // 丢包率
+		table.SetColMinWidth(10, 12) // 下载速度
+		table.SetColMinWidth(11, 12) // 上传速度
 	}
 
 	for i, result := range results {
@@ -219,14 +225,15 @@ func printResults(results []*speedtester.Result) {
 			if ipStr == "" {
 				ipStr = "N/A"
 			}
-
-			// 添加IP信息到日志
+			
+			// 获取IP信息
+			countryCode := "N/A"
+			usageType := "N/A"
+			isp := "N/A"
 			if result.IPInfo != nil {
-				fmt.Printf("IP: %s | Country: %s | Usage: %s | ISP: %s\n",
-					result.IPInfo.IP,
-					result.IPInfo.CountryCode,
-					result.IPInfo.UsageType,
-					result.IPInfo.ISP)
+				countryCode = result.IPInfo.CountryCode
+				usageType = result.IPInfo.UsageType
+				isp = result.IPInfo.ISP
 			}
 
 			row = []string{
@@ -234,6 +241,9 @@ func printResults(results []*speedtester.Result) {
 				result.ProxyName,
 				result.ProxyType,
 				ipStr,
+				countryCode,
+				usageType,
+				isp,
 				latencyStr,
 				jitterStr,
 				packetLossStr,
