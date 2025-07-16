@@ -306,6 +306,7 @@ type Result struct {
 	ProxyName     string         `json:"proxy_name"`
 	ProxyType     string         `json:"proxy_type"`
 	ProxyConfig   map[string]any `json:"proxy_config"`
+	IP            string         `json:"ip"`
 	Latency       time.Duration  `json:"latency"`
 	Jitter        time.Duration  `json:"jitter"`
 	PacketLoss    float64        `json:"packet_loss"`
@@ -374,6 +375,9 @@ func (st *SpeedTester) testProxy(name string, proxy *CProxy) *Result {
 	if result.PacketLoss == 100 || result.Latency > st.config.MaxLatency {
 		return result
 	}
+
+	// 获取落地IP
+	result.IP = st.getProxyIP(proxy)
 
 	// 2. 并发进行下载和上传测试
 
@@ -594,4 +598,32 @@ func convertMappedIPv6ToIPv4(server string) string {
 		return ipv4.String()
 	}
 	return server
+}
+
+func (st *SpeedTester) getProxyIP(proxy constant.Proxy) string {
+	client := st.createClient(proxy, 10*time.Second)
+	
+	resp, err := client.Get("https://cloudflare.com/cdn-cgi/trace")
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+
+	lines := strings.Split(string(body), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "ip=") {
+			return strings.TrimPrefix(line, "ip=")
+		}
+	}
+
+	return ""
 }

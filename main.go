@@ -110,6 +110,7 @@ func printResults(results []*speedtester.Result) {
 			"序号",
 			"节点名称",
 			"类型",
+			"落地IP",
 			"延迟",
 			"抖动",
 			"丢包率",
@@ -135,10 +136,12 @@ func printResults(results []*speedtester.Result) {
 	table.SetColMinWidth(2, 8)  // 类型
 	table.SetColMinWidth(3, 8)  // 延迟
 	if !*fastMode {
-		table.SetColMinWidth(4, 8)  // 抖动
-		table.SetColMinWidth(5, 8)  // 丢包率
-		table.SetColMinWidth(6, 12) // 下载速度
-		table.SetColMinWidth(7, 12) // 上传速度
+		table.SetColMinWidth(3, 15) // 落地IP
+		table.SetColMinWidth(4, 8)  // 延迟
+		table.SetColMinWidth(5, 8)  // 抖动
+		table.SetColMinWidth(6, 8)  // 丢包率
+		table.SetColMinWidth(7, 12) // 下载速度
+		table.SetColMinWidth(8, 12) // 上传速度
 	}
 
 	for i, result := range results {
@@ -212,10 +215,15 @@ func printResults(results []*speedtester.Result) {
 				latencyStr,
 			}
 		} else {
+			ipStr := result.IP
+			if ipStr == "" {
+				ipStr = "N/A"
+			}
 			row = []string{
 				idStr,
 				result.ProxyName,
 				result.ProxyType,
+				ipStr,
 				latencyStr,
 				jitterStr,
 				packetLossStr,
