@@ -631,18 +631,18 @@ func convertMappedIPv6ToIPv4(server string) string {
 
 func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 	client := st.createClient(proxy, 10*time.Second)
-	
+
 	for attempt := 0; attempt < 3; attempt++ {
 		if attempt > 0 {
 			time.Sleep(500 * time.Millisecond)
 		}
-		
+
 		// Step 1: Get token, IP, and timestamp from ip2location.com
 		resp, err := client.Get("https://www.ip2location.com/")
 		if err != nil {
 			continue
 		}
-		
+
 		if resp.StatusCode != http.StatusOK {
 			resp.Body.Close()
 			continue
@@ -656,7 +656,7 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 
 		// Parse the HTML response to extract token, IP, and timestamp
 		bodyStr := string(body)
-		
+
 		// Extract token using regex - match both quoted and unquoted values
 		tokenRegex := regexp.MustCompile(`token:\s*['"]([^'"]+)['"]`)
 		tokenMatch := tokenRegex.FindStringSubmatch(bodyStr)
@@ -665,7 +665,7 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			continue
 		}
 		token := tokenMatch[1]
-		
+
 		// Extract IP using regex - match both quoted and unquoted values
 		ipRegex := regexp.MustCompile(`ip:\s*['"]([^'"]+)['"]`)
 		ipMatch := ipRegex.FindStringSubmatch(bodyStr)
@@ -674,29 +674,40 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			continue
 		}
 		ip := ipMatch[1]
-		
-		// Extract timestamp using regex
-		timestampRegex := regexp.MustCompile(`t:\s*(\d+)`)
+
+		// Extract timestamp using regex - look for 10-digit timestamp
+		var timestamp string
+		timestampRegex := regexp.MustCompile(`t:\s*(\d{10})`)
 		timestampMatch := timestampRegex.FindStringSubmatch(bodyStr)
 		if len(timestampMatch) < 2 {
 			fmt.Println("Failed to extract timestamp from response")
-			continue
+			// Try alternative patterns
+			timestampRegex2 := regexp.MustCompile(`t:\s*(\d+)`)
+			timestampMatch2 := timestampRegex2.FindStringSubmatch(bodyStr)
+			if len(timestampMatch2) < 2 {
+				fmt.Println("Failed to extract timestamp with alternative pattern")
+				continue
+			}
+			timestamp = timestampMatch2[1]
+			fmt.Println("Found timestamp with alternative pattern:", timestamp)
+		} else {
+			timestamp = timestampMatch[1]
+			fmt.Println("Found timestamp:", timestamp)
 		}
-		timestamp := timestampMatch[1]
-		
+
 		fmt.Println("Extracted - IP:", ip, "Token:", token, "Timestamp:", timestamp)
-		
+
 		// Step 2: Query IP info using the extracted data
 		data := url.Values{}
 		data.Set("ip", ip)
 		data.Set("t", timestamp)
 		data.Set("token", token)
-		
+
 		resp2, err := client.PostForm("https://api.ip2location.io/query/", data)
 		if err != nil {
 			continue
 		}
-		
+
 		if resp2.StatusCode != http.StatusOK {
 			resp2.Body.Close()
 			continue
@@ -709,7 +720,7 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 		}
 
 		fmt.Println("IP2Location API response:", string(body2))
-		
+
 		var ip2LocationResp IP2LocationResponse
 		if err := json.Unmarshal(body2, &ip2LocationResp); err != nil {
 			fmt.Println("Failed to unmarshal IP2Location response:", err)
@@ -727,6 +738,6 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 
 		return ip, ipInfo
 	}
-	
+
 	return "", nil
 }
