@@ -708,10 +708,13 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			continue
 		}
 
+		// Format UsageType to extract parenthetical content
+		usageTypeFormatted := formatUsageType(ip2LocationResp.UsageType)
+
 		ipInfo := &IPInfo{
 			IP:          ip,
 			CountryCode: ip2LocationResp.CountryCode,
-			UsageType:   ip2LocationResp.UsageType,
+			UsageType:   usageTypeFormatted,
 			ISP:         ip2LocationResp.ISP,
 		}
 
@@ -719,4 +722,27 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 	}
 
 	return "", nil
+}
+
+func formatUsageType(usageType string) string {
+	if usageType == "" {
+		return ""
+	}
+
+	// Use regex to extract content within parentheses
+	re := regexp.MustCompile(`\(([^)]+)\)`)
+	matches := re.FindAllStringSubmatch(usageType, -1)
+
+	if len(matches) == 0 {
+		return usageType
+	}
+
+	var codes []string
+	for _, match := range matches {
+		if len(match) > 1 {
+			codes = append(codes, match[1])
+		}
+	}
+
+	return strings.Join(codes, ",")
 }
