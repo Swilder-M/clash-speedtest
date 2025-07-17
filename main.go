@@ -114,6 +114,7 @@ func printResults(results []*speedtester.Result) {
 			"国家",
 			"用途",
 			"ISP",
+			"风险值",
 			"延迟",
 			"抖动",
 			"丢包率",
@@ -137,17 +138,19 @@ func printResults(results []*speedtester.Result) {
 	table.SetColMinWidth(0, 4)  // 序号
 	table.SetColMinWidth(1, 20) // 节点名称
 	table.SetColMinWidth(2, 8)  // 类型
-	table.SetColMinWidth(3, 8)  // 延迟
-	if !*fastMode {
+	if *fastMode {
+		table.SetColMinWidth(3, 8)  // 延迟
+	} else {
 		table.SetColMinWidth(3, 15) // 落地IP
 		table.SetColMinWidth(4, 6)  // 国家
 		table.SetColMinWidth(5, 8)  // 用途
 		table.SetColMinWidth(6, 15) // ISP
-		table.SetColMinWidth(7, 8)  // 延迟
-		table.SetColMinWidth(8, 8)  // 抖动
-		table.SetColMinWidth(9, 8)  // 丢包率
-		table.SetColMinWidth(10, 12) // 下载速度
-		table.SetColMinWidth(11, 12) // 上传速度
+		table.SetColMinWidth(7, 8)  // 风险值
+		table.SetColMinWidth(8, 8)  // 延迟
+		table.SetColMinWidth(9, 8)  // 抖动
+		table.SetColMinWidth(10, 8) // 丢包率
+		table.SetColMinWidth(11, 12) // 下载速度
+		table.SetColMinWidth(12, 12) // 上传速度
 	}
 
 	for i, result := range results {
@@ -212,6 +215,20 @@ func printResults(results []*speedtester.Result) {
 			uploadSpeedStr = colorRed + uploadSpeedStr + colorReset
 		}
 
+		// 风险值颜色
+		fraudScoreStr := result.FormatFraudScore()
+		fraudColor := result.GetFraudScoreColor()
+		switch fraudColor {
+		case "green":
+			fraudScoreStr = colorGreen + fraudScoreStr + colorReset
+		case "yellow":
+			fraudScoreStr = colorYellow + fraudScoreStr + colorReset
+		case "red":
+			fraudScoreStr = colorRed + fraudScoreStr + colorReset
+		default:
+			// 保持原样，无颜色
+		}
+
 		var row []string
 		if *fastMode {
 			row = []string{
@@ -244,6 +261,7 @@ func printResults(results []*speedtester.Result) {
 				countryCode,
 				usageType,
 				isp,
+				fraudScoreStr,
 				latencyStr,
 				jitterStr,
 				packetLossStr,

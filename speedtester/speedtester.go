@@ -309,6 +309,7 @@ type IPInfo struct {
 	CountryCode string `json:"country_code"`
 	UsageType   string `json:"usage_type"`
 	ISP         string `json:"isp"`
+	FraudScore  int    `json:"fraud_score"`
 }
 
 type IPAPIResponse struct {
@@ -328,6 +329,7 @@ type IP2LocationResponse struct {
 	CityName    string `json:"cityName"`
 	ISP         string `json:"isp"`
 	UsageType   string `json:"usageType"`
+	FraudScore  int    `json:"fraudScore"`
 }
 
 type Result struct {
@@ -371,6 +373,28 @@ func (r *Result) FormatPacketLoss() string {
 
 func (r *Result) FormatUploadSpeed() string {
 	return formatSpeed(r.UploadSpeed)
+}
+
+func (r *Result) FormatFraudScore() string {
+	if r.IPInfo == nil {
+		return "N/A"
+	}
+	return fmt.Sprintf("%d", r.IPInfo.FraudScore)
+}
+
+func (r *Result) GetFraudScoreColor() string {
+	if r.IPInfo == nil {
+		return "white"
+	}
+	
+	score := r.IPInfo.FraudScore
+	if score >= 0 && score <= 30 {
+		return "green"
+	} else if score > 30 && score <= 60 {
+		return "yellow"
+	} else {
+		return "red"
+	}
 }
 
 func formatSpeed(bytesPerSecond float64) string {
@@ -716,6 +740,7 @@ func (st *SpeedTester) getProxyIPInfo(proxy constant.Proxy) (string, *IPInfo) {
 			CountryCode: ip2LocationResp.CountryCode,
 			UsageType:   usageTypeFormatted,
 			ISP:         ip2LocationResp.ISP,
+			FraudScore:  ip2LocationResp.FraudScore,
 		}
 
 		return ip, ipInfo
