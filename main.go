@@ -142,15 +142,15 @@ func printResults(results []*speedtester.Result) {
 		table.SetColMinWidth(3, 8) // 延迟
 	} else {
 		table.SetColMinWidth(3, 15) // 落地IP
-		table.SetColMinWidth(4, 6)  // 国家
-		table.SetColMinWidth(5, 6)  // 用途
+		table.SetColMinWidth(4, 7)  // 国家
+		table.SetColMinWidth(5, 7)  // 用途
 		table.SetColMinWidth(6, 15) // ISP
-		table.SetColMinWidth(7, 6)  // 风险值
+		table.SetColMinWidth(7, 7)  // 风险值
 		table.SetColMinWidth(8, 7)  // 延迟
 		table.SetColMinWidth(9, 7)  // 抖动
-		table.SetColMinWidth(10, 8) // 丢包率
-		table.SetColMinWidth(11, 9) // 下载速度
-		table.SetColMinWidth(12, 9) // 上传速度
+		table.SetColMinWidth(10, 7) // 丢包率
+		table.SetColMinWidth(11, 8) // 下载速度
+		table.SetColMinWidth(12, 8) // 上传速度
 	}
 
 	for i, result := range results {
