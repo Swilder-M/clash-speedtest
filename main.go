@@ -141,14 +141,14 @@ func printResults(results []*speedtester.Result) {
 	if *fastMode {
 		table.SetColMinWidth(3, 8) // 延迟
 	} else {
-		table.SetColMinWidth(3, 15) // 落地IP
-		table.SetColMinWidth(4, 7)  // 国家
+		table.SetColMinWidth(3, 16) // 落地IP
+		table.SetColMinWidth(4, 8)  // 国家
 		table.SetColMinWidth(5, 8)  // 用途
-		table.SetColMinWidth(6, 15) // ISP
-		table.SetColMinWidth(7, 7)  // 风险值
-		table.SetColMinWidth(8, 7)  // 延迟
-		table.SetColMinWidth(9, 7)  // 抖动
-		table.SetColMinWidth(10, 7) // 丢包率
+		table.SetColMinWidth(6, 16) // ISP
+		table.SetColMinWidth(7, 8)  // 风险值
+		table.SetColMinWidth(8, 8)  // 延迟
+		table.SetColMinWidth(9, 8)  // 抖动
+		table.SetColMinWidth(10, 8) // 丢包率
 		table.SetColMinWidth(11, 8) // 下载速度
 		table.SetColMinWidth(12, 8) // 上传速度
 	}
