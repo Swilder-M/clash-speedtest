@@ -108,18 +108,18 @@ func printResults(results []*speedtester.Result) {
 	} else {
 		headers = []string{
 			"序号",
-			"节点名称",
+			"名称",
 			"类型",
-			"落地IP",
+			"落地",
 			"国家",
 			"用途",
 			"ISP",
-			"风险值",
+			"风险",
 			"延迟",
 			"抖动",
 			"丢包率",
-			"下载速度",
-			"上传速度",
+			"下载",
+			"上传",
 		}
 	}
 	table.SetHeader(headers)
@@ -143,12 +143,12 @@ func printResults(results []*speedtester.Result) {
 	} else {
 		table.SetColMinWidth(3, 15) // 落地IP
 		table.SetColMinWidth(4, 6)  // 国家
-		table.SetColMinWidth(5, 4)  // 用途
+		table.SetColMinWidth(5, 6)  // 用途
 		table.SetColMinWidth(6, 15) // ISP
 		table.SetColMinWidth(7, 6)  // 风险值
-		table.SetColMinWidth(8, 6)  // 延迟
-		table.SetColMinWidth(9, 6)  // 抖动
-		table.SetColMinWidth(10, 6) // 丢包率
+		table.SetColMinWidth(8, 7)  // 延迟
+		table.SetColMinWidth(9, 7)  // 抖动
+		table.SetColMinWidth(10, 8) // 丢包率
 		table.SetColMinWidth(11, 9) // 下载速度
 		table.SetColMinWidth(12, 9) // 上传速度
 	}
