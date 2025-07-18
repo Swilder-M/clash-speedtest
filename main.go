@@ -143,7 +143,7 @@ func printResults(results []*speedtester.Result) {
 	} else {
 		table.SetColMinWidth(3, 15) // 落地IP
 		table.SetColMinWidth(4, 7)  // 国家
-		table.SetColMinWidth(5, 7)  // 用途
+		table.SetColMinWidth(5, 8)  // 用途
 		table.SetColMinWidth(6, 15) // ISP
 		table.SetColMinWidth(7, 7)  // 风险值
 		table.SetColMinWidth(8, 7)  // 延迟
